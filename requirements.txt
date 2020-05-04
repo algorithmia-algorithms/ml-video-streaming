@@ -1,0 +1,5 @@
+streamlink==1.3.1
+ffmpeg-python==0.2.0
+Algorithmia==1.3.0
+kinesis-python==0.2.1
+pyaml==20.4.0

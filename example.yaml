@@ -1,0 +1,18 @@
+algorithmia:
+  api_key: YOUR_API_KEY
+  api_address: https://api.algorithmia.com
+  data_collection: s3://video-processing-james
+aws:
+  credentials:
+    access_key: YOUR_ACCESS_KEY
+    secret: YOUR_SECRET
+    region_name: us-east-1
+  kinesis_input_name: video-processing-input
+  kinesis_output_name: video-processing-output
+ffmpeg:
+  fps: 10
+  chunk_duration: 00:00:10
+threading:
+  minimum_threadpool: 5
+  maximum_threadpool: 30
+  stream_url: https://www.youtube.com/watch?v=30qZjexZ8bQ

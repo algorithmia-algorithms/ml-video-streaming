@@ -1,2 +1,1 @@
-# ml-video-streaming
-Machine Learning transformation on Video Streams
+# video-streaming-service
