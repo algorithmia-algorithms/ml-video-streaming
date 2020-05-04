@@ -9,7 +9,6 @@ from uuid import uuid4
 import json
 
 MAX_SECONDS = 120
-FPS = 10
 
 
 class CheckableVariable(object):
@@ -67,7 +66,7 @@ class PoolManger(object):
         self.release()
 
 
-def wait_to_transform(client, logger, itr, next_input, next_output, time_wait=5):
+def wait_to_transform(client, logger, itr, next_input, next_output, fps, time_wait=5):
     dataFile = client.file(next_input)
     while True:
         logger.info("{} - process - woke thread".format(itr))
@@ -76,12 +75,12 @@ def wait_to_transform(client, logger, itr, next_input, next_output, time_wait=5)
         else:
             time.sleep(time_wait)
     logger.info("{} - process - processing".format(itr))
-    result = transform(client, logger, next_input, next_output)
+    result = transform(client, logger, next_input, next_output, fps)
     logger.info("{} - process - processed".format(itr))
     return result
 
 
-def transform(client, logger, input_file, output_file):
+def transform(client, logger, input_file, output_file, fps):
     algo = "deeplearning/ObjectDetectionCOCO/0.3.x"
     advanced_input = {
         "images": "$BATCH_INPUT",
@@ -94,7 +93,7 @@ def transform(client, logger, input_file, output_file):
         "output_file": output_file,
         "algorithm": algo,
         "advanced_input": advanced_input,
-        "fps": FPS,
+        "fps": fps,
     }
     try:
         result = client.algo('media/videotransform?timeout=3000').pipe(input).result
@@ -104,7 +103,7 @@ def transform(client, logger, input_file, output_file):
         return None
 
 
-def process(logger, client, feeder_q, processed_q, thread_locker, remote_format):
+def process(logger, client, feeder_q, processed_q, thread_locker, remote_format, fps):
     with thread_locker:
         logger.info("{}/{} threads unlocked".format(str(thread_locker.current()), str(thread_locker.max())))
         while True:
@@ -114,7 +113,7 @@ def process(logger, client, feeder_q, processed_q, thread_locker, remote_format)
             itr = data['itr']
             input_url = data['url']
             remote_path = "{}/{}.mp4".format(remote_format, str(uuid4()))
-            algorithm_response = wait_to_transform(client, logger, itr, input_url, remote_path, time_wait=1)
+            algorithm_response = wait_to_transform(client, logger, itr, input_url, remote_path, fps, time_wait=1)
             if algorithm_response:
                 data = {itr: algorithm_response}
                 logger.info("pushing {} to publishing queue..".format(itr))
@@ -127,8 +126,8 @@ def process(logger, client, feeder_q, processed_q, thread_locker, remote_format)
                 logger.info("skipping {} due to exception...".format(itr))
 
 
-def consume(logger, work1_q, work2_q, input_stream):
-    session = boto3.Session('AKIAJ4EUKUSIFX5EDS2Q', 'y1Bd1qLJJVwJubegX5yV9An+/IhBwLnf+mZulEwv', region_name='us-east-1')
+def consume(logger, aws_creds, work1_q, work2_q, input_stream):
+    session = boto3.Session(aws_creds['access_key'], aws_creds['secret'], region_name=aws_creds['region_name'])
     consumer = create_consumer(input_stream, session)
     logger.info("consumer - starting to consume...")
     for message in consumer:
@@ -137,11 +136,11 @@ def consume(logger, work1_q, work2_q, input_stream):
         logger.info("consumer - got message and queued")
 
 
-def publish(logger, output_stream, work_completed_queue, input_secondary_queue, thread_locker):
-    session = boto3.Session('AKIAJ4EUKUSIFX5EDS2Q', 'y1Bd1qLJJVwJubegX5yV9An+/IhBwLnf+mZulEwv', region_name='us-east-1')
+def publish(logger, aws_creds, output_stream, work_completed_queue, input_secondary_queue, thread_locker, fps):
+    session = boto3.Session(aws_creds['access_key'], aws_creds['secret'], region_name=aws_creds['region_name'])
     producer = create_producer(output_stream, session)
     cutoff = None
-    videos_per_publish = int(MAX_SECONDS / FPS)
+    videos_per_publish = int(MAX_SECONDS / fps)
     buffer = {}
     originals_buffer = {}
     t = time.time()
@@ -217,7 +216,7 @@ class Logger:
 
 
 def processor(algorithmia_api_key, aws_creds, min_pool, max_pool, input_stream_name, output_stream_name,
-              data_collection, algo_address=None):
+              data_collection, fps, algo_address=None):
     logger = Logger()
     if algo_address:
         client = Algorithmia.client(algorithmia_api_key, api_address=algo_address)
@@ -230,7 +229,7 @@ def processor(algorithmia_api_key, aws_creds, min_pool, max_pool, input_stream_n
     consume_t = [Thread(target=consume, args=(logger, aws_creds, input1_q, input2_q, input_stream_name))]
     publish_t = [
         Thread(target=publish, args=(logger, aws_creds, output_stream_name, processed_q, input2_q, thread_locker))]
-    threads = [Thread(target=process, args=(logger, client, input1_q, processed_q, thread_locker, data_collection)) for
+    threads = [Thread(target=process, args=(logger, client, input1_q, processed_q, thread_locker, data_collection, fps)) for
                _ in range(100)]
     threads += consume_t + publish_t
     [thread.start() for thread in threads]
