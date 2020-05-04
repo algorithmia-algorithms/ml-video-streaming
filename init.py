@@ -37,7 +37,7 @@ if __name__ == "__main__":
     if mode == "generate":
         generate(api_key, aws_creds, data_collection, kinesis_input, stream_url, fps, chunk_duration, algo_address=api_address)
     elif mode == "process":
-        process(api_key, aws_creds, min_pool, max_pool, kinesis_input, kinesis_output, data_collection, algo_address=api_address)
+        process(api_key, aws_creds, min_pool, max_pool, kinesis_input, kinesis_output, data_collection, fps, algo_address=api_address)
     elif mode == "broadcast":
         broadcast(api_key, aws_creds, kinesis_output, fps, algo_address=api_address)
     else:

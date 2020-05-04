@@ -228,7 +228,7 @@ def processor(algorithmia_api_key, aws_creds, min_pool, max_pool, input_stream_n
     thread_locker = PoolManger(min_pool, max_pool, 5)
     consume_t = [Thread(target=consume, args=(logger, aws_creds, input1_q, input2_q, input_stream_name))]
     publish_t = [
-        Thread(target=publish, args=(logger, aws_creds, output_stream_name, processed_q, input2_q, thread_locker))]
+        Thread(target=publish, args=(logger, aws_creds, output_stream_name, processed_q, input2_q, thread_locker, fps))]
     threads = [Thread(target=process, args=(logger, client, input1_q, processed_q, thread_locker, data_collection, fps)) for
                _ in range(100)]
     threads += consume_t + publish_t
