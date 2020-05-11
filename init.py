@@ -23,7 +23,8 @@ if __name__ == "__main__":
     api_address = algo_data.get("api_address", None)
     data_collection = algo_data['data_collection']
 
-    aws_creds = aws_data['credentials']
+    credentials = aws_data['credentials']
+    region = aws_data['region_name']
     kinesis_input = aws_data['kinesis_input_name']
     kinesis_output = aws_data['kinesis_output_name']
 
@@ -35,10 +36,10 @@ if __name__ == "__main__":
     stream_url = threading_data['stream_url']
 
     if mode == "generate":
-        generate(api_key, aws_creds, data_collection, kinesis_input, stream_url, fps, chunk_duration, algo_address=api_address)
+        generate(api_key, credentials, data_collection, kinesis_input, stream_url, fps, chunk_duration, algo_address=api_address)
     elif mode == "process":
-        process(api_key, aws_creds, min_pool, max_pool, kinesis_input, kinesis_output, data_collection, fps, algo_address=api_address)
+        process(api_key, credentials, min_pool, max_pool, kinesis_input, kinesis_output, data_collection, fps, algo_address=api_address)
     elif mode == "broadcast":
-        broadcast(api_key, aws_creds, kinesis_output, fps, algo_address=api_address)
+        broadcast(api_key, credentials, kinesis_output, fps, algo_address=api_address)
     else:
         raise Exception("{} not a valid runtype".format(mode))

@@ -3,7 +3,7 @@ import time
 from threading import Thread, Lock
 from queue import Queue
 import Algorithmia
-from src.utils import create_producer, create_consumer
+from src.utils import create_producer, create_consumer, credential_auth
 import boto3
 from uuid import uuid4
 import json
@@ -127,7 +127,7 @@ def process(logger, client, feeder_q, processed_q, thread_locker, remote_format,
 
 
 def consume(logger, aws_creds, work1_q, work2_q, input_stream):
-    session = boto3.Session(aws_creds['access_key'], aws_creds['secret'], region_name=aws_creds['region_name'])
+    session = credential_auth(aws_creds)
     consumer = create_consumer(input_stream, session)
     logger.info("consumer - starting to consume...")
     for message in consumer:
@@ -137,7 +137,7 @@ def consume(logger, aws_creds, work1_q, work2_q, input_stream):
 
 
 def publish(logger, aws_creds, output_stream, work_completed_queue, input_secondary_queue, thread_locker, fps):
-    session = boto3.Session(aws_creds['access_key'], aws_creds['secret'], region_name=aws_creds['region_name'])
+    session = credential_auth(aws_creds)
     producer = create_producer(output_stream, session)
     cutoff = None
     videos_per_publish = int(MAX_SECONDS / fps)

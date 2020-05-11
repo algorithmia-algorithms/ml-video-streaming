@@ -1,7 +1,7 @@
 import Algorithmia
 import ffmpeg
 import os
-from src.utils import create_consumer
+from src.utils import create_consumer, credential_auth
 import json
 import boto3
 import time
@@ -56,6 +56,6 @@ def broadcast(algorithmia_api_key, aws_creds, kinesis_stream_name, stream_fps, d
         client = Algorithmia.client(algorithmia_api_key, api_address=algo_address)
     else:
         client = Algorithmia.client(algorithmia_api_key)
-    session = boto3.Session(aws_creds['access_key'], aws_creds['secret'], region_name=aws_creds['region_name'])
+    session = credential_auth(aws_creds)
     consumer = create_consumer(kinesis_stream_name, session, dynamo_table_name)
     main_loop(client, consumer, stream_fps)

@@ -4,8 +4,7 @@ import os
 import time
 import shutil
 from subprocess import Popen, PIPE
-from src.utils import create_producer
-import boto3
+from src.utils import create_producer, credential_auth
 import Algorithmia
 from uuid import uuid4
 import json
@@ -69,14 +68,13 @@ def prepare_scratch_space():
     os.makedirs("/tmp/streaming_data")
 
 
-
 def generate(algorithmia_api_key, aws_creds, data_collection, kinesis_input_name, stream_url, fps, chunk_size="00:00:10", algo_address=None):
     if algo_address:
         client = Algorithmia.client(algorithmia_api_key, api_address=algo_address)
     else:
         client = Algorithmia.client(algorithmia_api_key)
     prepare_scratch_space()
-    session = boto3.Session(aws_creds['access_key'], aws_creds['secret'], region_name=aws_creds['region_name'])
+    session = credential_auth(aws_creds)
     producer = create_producer(kinesis_input_name, session)
     local_file_format = "{}/stream_input_{}.mp4".format(LOCAL_SYSTEM_DUMP_PATH, "{}")
     remote_file_format = "{}/{}-{}.mp4".format(data_collection, str(uuid4()), "{}")
