@@ -22,7 +22,7 @@ def credential_auth(aws_creds):
         session = boto3.Session(access_keys['access_key'], access_keys['secret'], region_name=aws_creds['region_name'])
     elif 'IAM' in aws_creds:
         iam = aws_creds['IAM']
-        if 'local_iam' in iam:
+        if iam and 'local_iam' in iam:
             session = boto3.Session(profile_name=iam['local_iam']['profile_name'], region_name=aws_creds['region_name'])
         else:
             session = boto3.Session(region_name=aws_creds['region_name'])

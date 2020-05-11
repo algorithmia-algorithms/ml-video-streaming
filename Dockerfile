@@ -11,7 +11,8 @@ RUN apt-get update && apt-get install -y \
     libpcre3 \
     libpcre3-dev \
     libssl-dev \
-    zlib1g-dev
+    zlib1g-dev \
+    lsof
 
 RUN add-apt-repository -y ppa:jonathonf/ffmpeg-4 && \
     apt-get update && apt-get install -y ffmpeg
