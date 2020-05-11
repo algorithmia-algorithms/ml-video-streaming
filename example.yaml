@@ -12,7 +12,7 @@ aws:
 # When using IAM roles, and running in production, comment out the 'local_iam' block and it's dependents
       local_iam:
         profile_name: sts
-  region_name: us-east-1
+    region_name: us-east-1
   kinesis_input_name: video-processing-input
   kinesis_output_name: video-processing-output
 ffmpeg:

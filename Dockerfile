@@ -23,10 +23,10 @@ RUN /bin/bash /opt/streaming/build_nginx.sh
 
 COPY requirements.txt /opt/streaming/requirements.txt
 RUN pip3 install -r /opt/streaming/requirements.txt
-
 COPY src /opt/streaming/src
 COPY init.py /opt/streaming/init.py
-COPY config.yaml /usr/local/nginx/conf/nginx.conf
-RUN /usr/local/nginx/sbin/nginx
+COPY src/broadcast/nginx.conf /usr/local/nginx/conf/nginx.conf
+COPY config.yaml /opt/streaming/config.yaml
+RUN mkdir /tmp/streaming && /usr/local/nginx/sbin/nginx
 
 ENTRYPOINT ["/usr/bin/python3", "/opt/streaming/init.py"]

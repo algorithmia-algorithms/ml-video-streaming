@@ -24,7 +24,6 @@ if __name__ == "__main__":
     data_collection = algo_data['data_collection']
 
     credentials = aws_data['credentials']
-    region = aws_data['region_name']
     kinesis_input = aws_data['kinesis_input_name']
     kinesis_output = aws_data['kinesis_output_name']
 
