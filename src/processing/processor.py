@@ -50,8 +50,8 @@ class PoolManger(object):
     def acquire(self):
         while self.current() >= self.max() and self._unlock.locked():
             time.sleep(0.25)
-        self._current_count.increment(1)
         self._unlock.acquire()
+        self._current_count.increment(1)
 
     def release(self):
         self._unlock.release()
@@ -225,7 +225,7 @@ def processor(algorithmia_api_key, aws_creds, min_pool, max_pool, input_stream_n
     input1_q = Queue(500)
     input2_q = Queue(500)
     processed_q = Queue(500)
-    thread_locker = PoolManger(min_pool, max_pool, 5)
+    thread_locker = PoolManger(min_pool, max_pool, 2)
     consume_t = [Thread(target=consume, args=(logger, aws_creds, input1_q, input2_q, input_stream_name))]
     publish_t = [
         Thread(target=publish, args=(logger, aws_creds, output_stream_name, processed_q, input2_q, thread_locker, fps))]
