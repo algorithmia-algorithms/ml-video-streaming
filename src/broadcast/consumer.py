@@ -29,6 +29,7 @@ def push_to_stream(local_path, svg_path, type, input_fps):
 
 
 def start_nginx():
+    os.makedirs("/tmp/streaming", exist_ok=True)
     p = Popen("/usr/local/nginx/sbin/nginx")
     p.wait()
 
@@ -68,4 +69,5 @@ def broadcast(algorithmia_api_key, aws_creds, kinesis_stream_name, stream_fps, d
         client = Algorithmia.client(algorithmia_api_key)
     session = credential_auth(aws_creds)
     consumer = create_consumer(kinesis_stream_name, session, dynamo_table_name)
+    start_nginx()
     main_loop(client, consumer, stream_fps)
