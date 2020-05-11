@@ -4,7 +4,6 @@ from threading import Thread, Lock
 from queue import Queue
 import Algorithmia
 from src.utils import create_producer, create_consumer, credential_auth
-import boto3
 from uuid import uuid4
 import json
 
@@ -19,18 +18,18 @@ class CheckableVariable(object):
 
     def get(self):
         with self.lock:
-            result = self.queue.get_nowait()
+            result = self.queue.get()
             self.queue.put(result)
             return result
 
     def increment(self, value):
         with self.lock:
-            result = self.queue.get_nowait()
+            result = self.queue.get()
             self.queue.put(result + value)
 
     def decrement(self, value):
         with self.lock:
-            result = self.queue.get_nowait()
+            result = self.queue.get()
             self.queue.put(result - value)
 
 
@@ -48,8 +47,11 @@ class PoolManger(object):
         return self._current_count.get()
 
     def acquire(self):
-        while self.current() >= self.max() and self._unlock.locked():
-            time.sleep(0.25)
+        while True:
+            if not self._unlock.locked() and self.current() < self.max():
+                break
+            else:
+                time.sleep(uniform(0.1, 0.5))
         self._unlock.acquire()
         self._current_count.increment(1)
 
@@ -215,7 +217,7 @@ class Logger:
         print(next_message)
 
 
-def processor(algorithmia_api_key, aws_creds, min_pool, max_pool, input_stream_name, output_stream_name,
+def processor(algorithmia_api_key, aws_creds, initial_pool, input_stream_name, output_stream_name,
               data_collection, fps, algo_address=None):
     logger = Logger()
     if algo_address:
@@ -225,7 +227,7 @@ def processor(algorithmia_api_key, aws_creds, min_pool, max_pool, input_stream_n
     input1_q = Queue(500)
     input2_q = Queue(500)
     processed_q = Queue(500)
-    thread_locker = PoolManger(min_pool, max_pool, 2)
+    thread_locker = PoolManger(1, initial_pool, 2)
     consume_t = [Thread(target=consume, args=(logger, aws_creds, input1_q, input2_q, input_stream_name))]
     publish_t = [
         Thread(target=publish, args=(logger, aws_creds, output_stream_name, processed_q, input2_q, thread_locker, fps))]
