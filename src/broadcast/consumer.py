@@ -2,6 +2,7 @@ import Algorithmia
 import ffmpeg
 import os
 from src.utils import create_consumer, credential_auth
+from subprocess import Popen
 import json
 import time
 
@@ -27,6 +28,11 @@ def push_to_stream(local_path, svg_path, type, input_fps):
     print(" streamer - pushed stream")
 
 
+def start_nginx():
+    p = Popen("/usr/local/nginx/sbin/nginx")
+    p.wait()
+
+
 def download_and_stream(client, url, svg_path, type, input_fps):
     if url:
         local_path = client.file(url).getFile().name
@@ -40,7 +46,7 @@ def download_and_stream(client, url, svg_path, type, input_fps):
 def main_loop(client, consumer, input_fps):
     iterator = consumer.__iter__()
     print("starting main loop")
-    svg_path = "/home/ubuntu/btree.svg"
+    svg_path = "/opt/streaming/src/btree.svg"
     while True:
         message = iterator.__next__()
         if message:

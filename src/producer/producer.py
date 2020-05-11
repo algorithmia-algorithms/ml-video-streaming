@@ -27,7 +27,7 @@ def create_video_blocks(stream, path_naming, fps, segment_time='00:00:10'):
     (ffmpeg
      .input(stream)
      .output(path, segment_time=segment_time, f="segment", r=fps, reset_timestamps='1')
-     .global_args('-loglevel', 'info')
+     .global_args('-loglevel', 'warning')
      .run_async()
      )
 
@@ -56,9 +56,8 @@ def restream_file(client, producer, itr, local_file_path, remote_file_path):
         else:
             time.sleep(1)
 
-def stream_data(client, session, kinesis_stream, local_file_path, remote_file_path):
+def stream_data(client, producer, local_file_path, remote_file_path):
     itr = 1
-    producer = create_producer(kinesis_stream, session)
     while True:
         restream_file(client, producer, itr, local_file_path, remote_file_path)
         itr += 1
@@ -81,4 +80,4 @@ def generate(algorithmia_api_key, aws_creds, data_collection, kinesis_input_name
     input_stream = get_stream(stream_url)
 
     create_video_blocks(input_stream, local_file_format, fps)
-    stream_data(client, producer, local_file_format, remote_file_format, chunk_size)
+    stream_data(client, producer, local_file_format, remote_file_format)

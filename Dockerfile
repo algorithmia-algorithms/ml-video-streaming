@@ -11,7 +11,8 @@ RUN apt-get update && apt-get install -y \
     libpcre3 \
     libpcre3-dev \
     libssl-dev \
-    zlib1g-dev
+    zlib1g-dev \
+    lsof
 
 RUN add-apt-repository -y ppa:jonathonf/ffmpeg-4 && \
     apt-get update && apt-get install -y ffmpeg
@@ -27,6 +28,5 @@ COPY src /opt/streaming/src
 COPY init.py /opt/streaming/init.py
 COPY src/broadcast/nginx.conf /usr/local/nginx/conf/nginx.conf
 COPY config.yaml /opt/streaming/config.yaml
-RUN mkdir /tmp/streaming && /usr/local/nginx/sbin/nginx
 
 ENTRYPOINT ["/usr/bin/python3", "/opt/streaming/init.py"]
