@@ -3,7 +3,6 @@ import ffmpeg
 import os
 from src.utils import create_consumer, credential_auth
 import json
-import boto3
 import time
 
 
@@ -14,13 +13,15 @@ def push_to_stream(local_path, svg_path, type, input_fps):
         video_info = next(stream for stream in probe['streams'] if stream['codec_type'] == 'video')
         width = int(video_info['width'])
         input = ffmpeg.input(local_path)
-        overlay_dim = int(width/10)
+        overlay_dim = int(width / 10)
         overlay = ffmpeg.input(svg_path).filter_('scale', "{}x{}".format(str(overlay_dim), str(overlay_dim)))
         v0 = input['v'].overlay(overlay, x=10, y=10)
         a0 = input['a']
-        output = ffmpeg.output(v0, a0, "rtmp://localhost/hls/streaming", vcodec="h264", acodec="copy", r=input_fps,  max_muxing_queue_size=1024, f="flv")
+        output = ffmpeg.output(v0, a0, "rtmp://localhost/hls/streaming", vcodec="h264", acodec="copy", r=input_fps,
+                               max_muxing_queue_size=1024, f="flv")
     else:
-        output = ffmpeg.output(input, "rtmp://localhost/hls/streaming", vcodec="h264", acodec="copy", r=input_fps,  max_muxing_queue_size=1024, f="flv")
+        output = ffmpeg.output(input, "rtmp://localhost/hls/streaming", vcodec="h264", acodec="copy", r=input_fps,
+                               max_muxing_queue_size=1024, f="flv")
 
     output.run()
     print(" streamer - pushed stream")
@@ -34,6 +35,7 @@ def download_and_stream(client, url, svg_path, type, input_fps):
         push_to_stream(renamed_path, svg_path, type, input_fps)
     else:
         print("no URL provided, skipping..".format(url))
+
 
 def main_loop(client, consumer, input_fps):
     iterator = consumer.__iter__()
@@ -51,7 +53,9 @@ def main_loop(client, consumer, input_fps):
             print("no message found")
             time.sleep(1)
 
-def broadcast(algorithmia_api_key, aws_creds, kinesis_stream_name, stream_fps, dynamo_table_name=None, algo_address=None):
+
+def broadcast(algorithmia_api_key, aws_creds, kinesis_stream_name, stream_fps, dynamo_table_name=None,
+              algo_address=None):
     if algo_address:
         client = Algorithmia.client(algorithmia_api_key, api_address=algo_address)
     else:
