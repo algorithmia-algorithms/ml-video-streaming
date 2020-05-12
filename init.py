@@ -7,6 +7,7 @@ from multiprocessing import Process, Queue
 from distutils.dir_util import copy_tree
 import sys, os, time
 
+
 def build_image(docker_client, dockerfile_path, image_tag):
     try:
         image, _ = docker_client.images.build(path=".", dockerfile=dockerfile_path, tag=image_tag, rm=True)
@@ -69,10 +70,12 @@ def kill_dangling_images(docker_client):
         if len(image.tags) == 0:
             docker_client.images.remove(image.id, force=True)
 
+
 def copy_aws_dir():
     home_path = os.getenv("HOME", None)
     aws_cred_path = os.path.join(home_path, ".aws")
     copy_tree(aws_cred_path, ".aws")
+
 
 def get_log_and_push(logger, queue, name):
     for message in logger:
@@ -114,7 +117,8 @@ if __name__ == "__main__":
             elif mode == "broadcast":
                 container = run_container(client, image, api_key, api_address, "process", networking=True)
             else:
-                raise Exception("variable passed to init.py was {}, must be 'generate', 'process', or 'broadcast'".format(mode))
+                raise Exception(
+                    "variable passed to init.py was {}, must be 'generate', 'process', or 'broadcast'".format(mode))
             logger = client.api.attach(container, stream=True, logs=True, stdout=True, stderr=True)
             for msg in logger:
                 print(str(msg, 'utf-8'))
@@ -123,9 +127,10 @@ if __name__ == "__main__":
             generator = run_container(client, image, api_key, api_address, "generate")
             processor = run_container(client, image, api_key, api_address, "process")
             broadcaster = run_container(client, image, api_key, api_address, "broadcast", networking=True)
-            streams = [(container_name, client.api.attach(container, stdout=True, logs=True, stderr=True, stream=True)) for
-                    container_name, container in
-                    [("generate", generator), ("process", processor), ("broadcast", broadcaster)]]
+            streams = [(container_name, client.api.attach(container, stdout=True, logs=True, stderr=True, stream=True))
+                       for
+                       container_name, container in
+                       [("generate", generator), ("process", processor), ("broadcast", broadcaster)]]
             threads = [Process(target=get_log_and_push, args=(stream, logging_queue, name)) for name, stream in streams]
             [thread.start() for thread in threads]
             print("streaming started, connecting to containers")
@@ -136,9 +141,9 @@ if __name__ == "__main__":
                     msg = logging_queue.get()
                     print(msg)
 
-
     except Exception or KeyboardInterrupt as e:
         stop_and_kill_containers(client, True)
-        if os.path.exists(".aws"):
-            shutil.rmtree(".aws", ignore_errors=True)
+        path = os.path.join(os.getcwd(), '.aws')
+        if os.path.exists(path):
+            shutil.rmtree(path, ignore_errors=True)
         print(e)
