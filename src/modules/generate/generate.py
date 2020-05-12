@@ -27,7 +27,7 @@ def create_video_blocks(stream, path_naming, fps, segment_time='00:00:10'):
     (ffmpeg
      .input(stream)
      .output(path, segment_time=segment_time, f="segment", r=fps, reset_timestamps='1')
-     .global_args('-loglevel', 'warning')
+     .global_args('-loglevel', 'error')
      .run_async()
      )
 
@@ -43,14 +43,13 @@ def file_ready(file_path):
 def restream_file(client, producer, itr, local_file_path, remote_file_path):
     local_file_path = local_file_path.format(str(itr))
     remote_file_path = remote_file_path.format(str(itr))
-    print(local_file_path)
-    print(remote_file_path)
+    print(local_file_path, flush=True)
     while True:
         if file_ready(local_file_path):
-            print("uploading file...")
+            print("uploading file...", flush=True)
             client.file(remote_file_path).putFile(local_file_path)
             output = json.dumps({'url': remote_file_path, 'itr': itr})
-            print("pushing to kinesis...")
+            print("pushing to kinesis...", flush=True)
             producer.put(output)
             break
         else:
@@ -67,17 +66,20 @@ def prepare_scratch_space():
     os.makedirs("/tmp/streaming_data")
 
 
-def generate(algorithmia_api_key, aws_creds, data_collection, kinesis_input_name, stream_url, fps, chunk_size="00:00:10", algo_address=None):
+def generate(algorithmia_api_key, aws_creds, data_collection, kinesis_input_name, stream_url, fps, chunk_size, algo_address):
     if algo_address:
         client = Algorithmia.client(algorithmia_api_key, api_address=algo_address)
     else:
         client = Algorithmia.client(algorithmia_api_key)
+    print("starting generate", flush=True)
     prepare_scratch_space()
     session = credential_auth(aws_creds)
+    print("authenticated", flush=True)
     producer = create_producer(kinesis_input_name, session)
     local_file_format = "{}/stream_input_{}.mp4".format(LOCAL_SYSTEM_DUMP_PATH, "{}")
     remote_file_format = "{}/{}-{}.mp4".format(data_collection, str(uuid4()), "{}")
     input_stream = get_stream(stream_url)
+    print("got stream from {}, begining production loop".format(stream_url), flush=True)
 
-    create_video_blocks(input_stream, local_file_format, fps)
+    create_video_blocks(input_stream, local_file_format, fps, chunk_size)
     stream_data(client, producer, local_file_format, remote_file_format)

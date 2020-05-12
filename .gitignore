@@ -35,3 +35,4 @@ fabric.properties
 */__pycache__/
 *.pyc
 config.yaml
+.aws

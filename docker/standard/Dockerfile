@@ -22,11 +22,12 @@ WORKDIR /opt/streaming
 COPY build_nginx.sh /opt/streaming/build_nginx.sh
 RUN /bin/bash /opt/streaming/build_nginx.sh
 
+
 COPY requirements.txt /opt/streaming/requirements.txt
 RUN pip3 install -r /opt/streaming/requirements.txt
 COPY src /opt/streaming/src
-COPY init.py /opt/streaming/init.py
-COPY src/broadcast/nginx.conf /usr/local/nginx/conf/nginx.conf
+COPY stream.py /opt/streaming/stream.py
+COPY src/www/nginx.conf /usr/local/nginx/conf/nginx.conf
 COPY config.yaml /opt/streaming/config.yaml
 
-ENTRYPOINT ["/usr/bin/python3", "/opt/streaming/init.py"]
+ENTRYPOINT ["/usr/bin/python3", "/opt/streaming/stream.py"]

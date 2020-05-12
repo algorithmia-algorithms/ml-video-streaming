@@ -25,7 +25,7 @@ def push_to_stream(local_path, svg_path, type, input_fps):
                                max_muxing_queue_size=1024, f="flv")
 
     output.run()
-    print(" streamer - pushed stream")
+    print(" streamer - pushed stream", flush=True)
 
 
 def start_nginx():
@@ -41,23 +41,22 @@ def download_and_stream(client, url, svg_path, type, input_fps):
         os.rename(local_path, renamed_path)
         push_to_stream(renamed_path, svg_path, type, input_fps)
     else:
-        print("no URL provided, skipping..".format(url))
+        print("no URL provided, skipping..".format(url), flush=True)
 
 
 def main_loop(client, consumer, input_fps):
     iterator = consumer.__iter__()
-    print("starting main loop")
     svg_path = "/opt/streaming/src/btree.svg"
     while True:
         message = iterator.__next__()
         if message:
-            print("got a message")
+            print("got a message", flush=True)
             data = json.loads(message['Data'])
             url = data['url']
             type = data['type']
             download_and_stream(client, url, svg_path, type, input_fps)
         else:
-            print("no message found")
+            print("no message found", flush=True)
             time.sleep(1)
 
 
@@ -67,6 +66,7 @@ def broadcast(algorithmia_api_key, aws_creds, kinesis_stream_name, stream_fps, d
         client = Algorithmia.client(algorithmia_api_key, api_address=algo_address)
     else:
         client = Algorithmia.client(algorithmia_api_key)
+    print("starting broadcast", flush=True)
     session = credential_auth(aws_creds)
     consumer = create_consumer(kinesis_stream_name, session, dynamo_table_name)
     start_nginx()
