@@ -84,30 +84,30 @@ def get_log_and_push(logger, queue, name):
         for message in messages_split:
             queue.put("{} - {}".format(name, message))
 
+client = docker.from_env()
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        mode = str(sys.argv[1])
-    else:
-        mode = None
-    client = docker.from_env()
-    with open('config.yaml') as f:
-        data = yaml.safe_load(f)
-    if 'aws' in data and 'credentials' in data['aws']:
-        creds = data['aws']['credentials']
-        if 'IAM' in creds and 'local_iam' in creds['IAM']:
-            dockerfile_path = "docker/with_local_iam/Dockerfile"
-            copy_aws_dir()
-        else:
-            dockerfile_path = "docker/standard/Dockerfile"
-    else:
-        raise Exception("your 'config.yaml' file is misconfigured around 'aws'")
-    if 'algorithmia' in data and ('api_key' in data['algorithmia'] and 'api_address' in data['algorithmia']):
-        api_key = data['algorithmia']['api_key']
-        api_address = data['algorithmia']['api_address']
-    else:
-        raise Exception("your 'config.yaml' file is misconfigured around 'algorithmia'")
     try:
+        if len(sys.argv) > 1:
+            mode = str(sys.argv[1])
+        else:
+            mode = None
+        with open('config.yaml') as f:
+            data = yaml.safe_load(f)
+        if 'aws' in data and 'credentials' in data['aws']:
+            creds = data['aws']['credentials']
+            if 'IAM' in creds and 'local_iam' in creds['IAM']:
+                dockerfile_path = "docker/with_local_iam/Dockerfile"
+                copy_aws_dir()
+            else:
+                dockerfile_path = "docker/standard/Dockerfile"
+        else:
+            raise Exception("your 'config.yaml' file is misconfigured around 'aws'")
+        if 'algorithmia' in data and ('api_key' in data['algorithmia'] and 'api_address' in data['algorithmia']):
+            api_key = data['algorithmia']['api_key']
+            api_address = data['algorithmia']['api_address']
+        else:
+            raise Exception("your 'config.yaml' file is misconfigured around 'algorithmia'")
         image = build_image(client, dockerfile_path, "streaming")
         if mode:
             if mode == "generate":
@@ -141,9 +141,16 @@ if __name__ == "__main__":
                     msg = logging_queue.get()
                     print(msg)
 
-    except Exception or KeyboardInterrupt as e:
+    except KeyboardInterrupt as e:
+        print("killing")
         stop_and_kill_containers(client, True)
         path = os.path.join(os.getcwd(), '.aws')
         if os.path.exists(path):
             shutil.rmtree(path, ignore_errors=True)
-        print(e)
+    except Exception as e:
+        print("killing")
+        stop_and_kill_containers(client, True)
+        path = os.path.join(os.getcwd(), '.aws')
+        if os.path.exists(path):
+            shutil.rmtree(path, ignore_errors=True)
+        raise e

@@ -56,7 +56,10 @@ class PoolManger(object):
         self._current_count.increment(1)
 
     def release(self):
-        self._unlock.release()
+        try:
+            self._unlock.release()
+        except RuntimeError:
+            pass
 
     def update_max(self):
         self._max_count.increment(self._incr_size)
@@ -120,10 +123,7 @@ def process(logger, client, feeder_q, processed_q, thread_locker, remote_format,
                 data = {itr: algorithm_response}
                 logger.info("process - pushing {} to publishing queue..".format(itr))
                 processed_q.put(data)
-                try:
-                    thread_locker.release()
-                except ValueError:
-                    pass
+                thread_locker.release()
             else:
                 logger.info("process - skipping {} due to exception...".format(itr))
 
