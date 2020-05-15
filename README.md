@@ -8,11 +8,14 @@ First you will need to have [Docker](https://www.docker.com/) installed and to a
 Then, you should be ready to begin.
 
 ### Procedure
-1. Create a `config.yaml` file, follow the [example.yaml]() file as a guide; please add your `algorithmia api key`, and your `aws api credentials`.
-2. Run the following docker command `docker build -f Dockerfile -t stream-processing .` and wait for that to complete.
-3. Start the generator process with `docker run --rm --env MODE=generate stream-processing`, you can test everything is working by adding the `-it` argument.
-4. Start the processor process with `docker run --rm --env MODE=process stream-processing`, this one is worth attaching to when verifying scaling,etc
-5. and finally you'll want to start the broadcast process with `docker run --rm -p 1560:80 --env MODE=broadcast stream-processing`
-Now you should be able to visit http://localhost:1560, which is proxied through your broadcast docker container running nginx.
+1. Create a `config.yaml` file, follow the [example.yaml]() file as a guide; please add your `algorithmia api key`, and your `aws api credentials`, if you're using aws STS, please define 'local_iam' and provide your profile name.
+2. run `pip install -r requirements.txt` to ensure you have the proper dependencies to run everything.
+3. If you want to run the whole stack on your local machine, simply run `python init.py` and wait for the system to start.
+4. If you want to run the stack on multiple machines, run `python init.py generate`, `python init.py process`, `python init.py broadcast` on 3 different machines, they will be able to communicate with AWS Kinesis.
+Finally, if all went well you should be able to visit http://localhost, which is proxied through your broadcast docker container running nginx and eventually your livestream will begin broadcasting.
+
+If you'd like to cancel/close down your streaming pipeline, simply press "ctrl + c" which will automatically kill not only the python job, but all running docker containers.
+
+
 
 

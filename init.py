@@ -6,6 +6,7 @@ import shutil
 from multiprocessing import Process, Queue
 from distutils.dir_util import copy_tree
 import sys, os, time
+from pathlib import Path
 
 
 def build_image(docker_client, dockerfile_path, image_tag):
@@ -19,25 +20,37 @@ def build_image(docker_client, dockerfile_path, image_tag):
         raise e
 
 
-def run_container(client, image, algorithmia_api_key, algorithmia_api_address, mode, networking=False):
+def run_container(client, image, algorithmia_api_key, algorithmia_api_address, mode, local_aws=False, networking=False):
     raw_args = {}
 
     if isinstance(image, Image):
         image = image.id
     raw_args['image'] = image
     raw_args['version'] = client.containers.client.api._version
-    if networking:
+    home_dir = str(Path.home())
+    aws_dir = os.path.join(home_dir, ".aws")
+    if networking and local_aws:
+        raw_args['ports'] = {80: 80}
+        container_args = _create_container_args(raw_args)
+        container_args['host_config'] = client.api.create_host_config(port_bindings={80: ("127.0.0.1", 80)},
+                                                                      binds={aws_dir: {'bind': "/root/.aws", "mode": "ro"}})
+        container_args['volumes'] = ["/root/.aws"]
+    elif networking:
         raw_args['ports'] = {80: 80}
         container_args = _create_container_args(raw_args)
         container_args['host_config'] = client.api.create_host_config(port_bindings={80: ("127.0.0.1", 80)})
+    elif local_aws:
+        container_args = _create_container_args(raw_args)
+        container_args['host_config'] = client.api.create_host_config(binds={aws_dir: {'bind': "/root/.aws", "mode": "ro"}})
+        container_args['volumes'] = ["/root/.aws"]
+
     else:
         container_args = _create_container_args(raw_args)
     container_args['detach'] = True
-    if algorithmia_api_key:
-        container_args['environment'] = {}
-        container_args['environment']['ALGORITHMIA_API_KEY'] = algorithmia_api_key
-        container_args['environment']['ALGORITHMIA_API_ADDRESS'] = algorithmia_api_address
-        container_args['environment']['MODE'] = mode
+    container_args['environment'] = {}
+    container_args['environment']['ALGORITHMIA_API_KEY'] = algorithmia_api_key
+    container_args['environment']['ALGORITHMIA_API_ADDRESS'] = algorithmia_api_address
+    container_args['environment']['MODE'] = mode
 
     resp = client.api.create_container(**container_args)
     client.api.start(resp['Id'])
@@ -84,6 +97,7 @@ def get_log_and_push(logger, queue, name):
         for message in messages_split:
             queue.put("{} - {}".format(name, message))
 
+
 client = docker.from_env()
 
 if __name__ == "__main__":
@@ -97,10 +111,10 @@ if __name__ == "__main__":
         if 'aws' in data and 'credentials' in data['aws']:
             creds = data['aws']['credentials']
             if 'IAM' in creds and 'local_iam' in creds['IAM']:
-                dockerfile_path = "docker/with_local_iam/Dockerfile"
                 copy_aws_dir()
+                local_credentials = True
             else:
-                dockerfile_path = "docker/standard/Dockerfile"
+                local_credentials = False
         else:
             raise Exception("your 'config.yaml' file is misconfigured around 'aws'")
         if 'algorithmia' in data and ('api_key' in data['algorithmia'] and 'api_address' in data['algorithmia']):
@@ -108,14 +122,15 @@ if __name__ == "__main__":
             api_address = data['algorithmia']['api_address']
         else:
             raise Exception("your 'config.yaml' file is misconfigured around 'algorithmia'")
-        image = build_image(client, dockerfile_path, "streaming")
+        image = build_image(client, "Dockerfile", "streaming")
         if mode:
             if mode == "generate":
-                container = run_container(client, image, api_key, api_address, "generate")
+                container = run_container(client, image, api_key, api_address, "generate", local_aws=local_credentials)
             elif mode == "process":
-                container = run_container(client, image, api_key, api_address, "process")
+                container = run_container(client, image, api_key, api_address, "process", local_aws=local_credentials)
             elif mode == "broadcast":
-                container = run_container(client, image, api_key, api_address, "process", networking=True)
+                container = run_container(client, image, api_key, api_address, "broadcast", local_aws=local_credentials,
+                                          networking=True)
             else:
                 raise Exception(
                     "variable passed to init.py was {}, must be 'generate', 'process', or 'broadcast'".format(mode))
@@ -124,9 +139,9 @@ if __name__ == "__main__":
                 print(str(msg, 'utf-8'))
         else:
             logging_queue = Queue()
-            generator = run_container(client, image, api_key, api_address, "generate")
-            processor = run_container(client, image, api_key, api_address, "process")
-            broadcaster = run_container(client, image, api_key, api_address, "broadcast", networking=True)
+            generator = run_container(client, image, api_key, api_address, "generate", local_aws=local_credentials)
+            processor = run_container(client, image, api_key, api_address, "process", local_aws=local_credentials)
+            broadcaster = run_container(client, image, api_key, api_address, "broadcast", local_aws=local_credentials, networking=True)
             streams = [(container_name, client.api.attach(container, stdout=True, logs=True, stderr=True, stream=True))
                        for
                        container_name, container in
