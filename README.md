@@ -8,7 +8,7 @@ First you will need to have [Docker](https://www.docker.com/) installed and to a
 Then, you should be ready to begin.
 
 ### Procedure
-1. Create a `config.yaml` file, follow the [example.yaml]() file as a guide; please add your `algorithmia api key`, and your `aws api credentials`, if you're using aws STS, please define 'local_iam' and provide your profile name.
+1. Create a `config.yaml` file, follow the [example.yaml](https://github.com/algorithmia-algorithms/ml-video-streaming/blob/master/example.yaml) file as a guide; please add your `algorithmia api key`, and your `aws api credentials`, if you're using aws STS, please define 'local_iam' and provide your profile name.
 2. run `pip install -r requirements.txt` to ensure you have the proper dependencies to run everything.
 3. If you want to run the whole stack on your local machine, simply run `python init.py` and wait for the system to start.
 4. If you want to run the stack on multiple machines, run `python init.py generate`, `python init.py process`, `python init.py broadcast` on 3 different machines, they will be able to communicate with AWS Kinesis.
