@@ -7,9 +7,16 @@ from multiprocessing import Process, Queue
 from distutils.dir_util import copy_tree
 import sys, os, time
 from pathlib import Path
+from jinja2 import Template
 
-
-def build_image(docker_client, dockerfile_path, image_tag):
+def build_image(docker_client, host_url, index_jinja_path, dockerfile_path, image_tag):
+    with open(index_jinja_path) as f:
+        raw_template = f.read()
+    index_template = Template(raw_template)
+    output_path = index_jinja_path.split('.j2')[0]
+    index_string = index_template.render(host=host_url)
+    with open(output_path, 'w') as f:
+        f.write(index_string)
     try:
         image, _ = docker_client.images.build(path=".", dockerfile=dockerfile_path, tag=image_tag, rm=True)
         return image
@@ -85,6 +92,7 @@ def kill_dangling_images(docker_client):
 
 
 def copy_aws_dir():
+    print("copying creds")
     home_path = os.getenv("HOME", None)
     aws_cred_path = os.path.join(home_path, ".aws")
     copy_tree(aws_cred_path, ".aws")
@@ -110,7 +118,7 @@ if __name__ == "__main__":
             data = yaml.safe_load(f)
         if 'aws' in data and 'credentials' in data['aws']:
             creds = data['aws']['credentials']
-            if 'IAM' in creds and isinstance(['IAM'], dict) and  'local_iam' in creds['IAM']:
+            if 'IAM' in creds and isinstance(creds['IAM'], dict) and 'local_iam' in creds['IAM']:
                 copy_aws_dir()
                 local_credentials = True
             else:
@@ -122,7 +130,11 @@ if __name__ == "__main__":
             api_address = data['algorithmia']['api_address']
         else:
             raise Exception("your 'config.yaml' file is misconfigured around 'algorithmia'")
-        image = build_image(client, "Dockerfile", "streaming")
+        if 'video' in data and isinstance(data['video'], dict):
+            host = data['video']['host']
+        else:
+            raise Exception("your 'config.yaml' file is misconfigured around 'video'")
+        image = build_image(client, host, "src/www/index.html.j2", "Dockerfile", "streaming")
         if mode:
             if mode == "generate":
                 container = run_container(client, image, api_key, api_address, "generate", local_aws=local_credentials)

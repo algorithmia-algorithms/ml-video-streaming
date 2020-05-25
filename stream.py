@@ -17,7 +17,7 @@ if __name__ == "__main__":
     algo_data = data['algorithmia']
     aws_data = data['aws']
     ffmpeg_data = data['ffmpeg']
-    threading_data = data['threading']
+    video_data = data['video']
 
     api_key = algo_data['api_key']
     api_address = algo_data.get("api_address", None)
@@ -30,8 +30,8 @@ if __name__ == "__main__":
     fps = int(ffmpeg_data.get("fps", 10))
     chunk_duration = data.get("chunk_duration", "00:00:10")
 
-    initial_pool = int(threading_data['initial_threadpool'])
-    stream_url = threading_data['stream_url']
+    initial_pool = int(video_data['initial_threadpool'])
+    stream_url = video_data['stream_url']
 
     if mode == "generate":
         generate(api_key, credentials, data_collection, kinesis_input, stream_url, fps, chunk_duration, algo_address=api_address)

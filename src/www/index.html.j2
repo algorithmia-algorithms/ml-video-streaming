@@ -8,7 +8,7 @@
 <video id="video" width="500" height="500" controls></video>
 <script>
     var video = document.getElementById('video');
-    var videoSrc = "http://localhost/hls/streaming.m3u8";
+    var videoSrc = "http://{{host}}/hls/streaming.m3u8";
     if (Hls.isSupported()) {
         var hls = new Hls();
         console.log("hls supported");

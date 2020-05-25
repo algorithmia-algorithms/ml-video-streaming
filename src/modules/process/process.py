@@ -7,7 +7,7 @@ from src.utils import create_producer, create_consumer, credential_auth
 from uuid import uuid4
 import json
 
-MAX_SECONDS = 120
+MAX_SECONDS = 60
 
 
 class CheckableVariable(object):
@@ -146,12 +146,15 @@ def publish(logger, aws_creds, output_stream, work_completed_queue, input_second
     buffer = {}
     originals_buffer = {}
     t = time.time()
-    logger.info("output - starting to produce...")
+    logger.info("output - waiting {}s before starting publishing".format(str(MAX_SECONDS)))
+    while time.time() - t < MAX_SECONDS:
+        time.sleep(0.25)
+    t = time.time()
+    logger.info("output - starting publishing system...")
     while True:
         while work_completed_queue.empty() and input_secondary_queue.empty() and time.time() - t < MAX_SECONDS:
             time.sleep(0.25)
 
-        delta = time.time() - t
         transformed_indicies = list(buffer.keys())
 
         if not input_secondary_queue.empty():
@@ -161,15 +164,20 @@ def publish(logger, aws_creds, output_stream, work_completed_queue, input_second
                 cutoff = int(itr)
             original_url = data['url']
             originals_buffer[itr] = original_url
-
-        elif delta >= MAX_SECONDS and len(transformed_indicies) > 0:
+        elif not work_completed_queue.empty():
+            data = work_completed_queue.get()
+            key = list(data.keys())[0]
+            if int(key) >= cutoff:
+                buffer[key] = data[key]
+                logger.info("output - transformed -  {} - {}".format(transformed_indicies, cutoff))
+            else:
+                logger.info("output - {} is not greater than current cursor, ignoring...".format(key))
+        else:
             logger.info("output - {} - {}".format(transformed_indicies, videos_per_publish))
             transformed_indicies.sort()
             shippable_buffer = []
             increase_threads_signal = False
-            logger.info(
-                "output - {}s has elapsed, and buffer has {} transformed_indicies, starting publishing".format(
-                    str(delta), str(len(transformed_indicies))))
+            logger.info("output - pushing {}s of content to publishing buffer...".format(str(MAX_SECONDS)))
             for i in range(cutoff, cutoff + videos_per_publish):
                 if i in transformed_indicies:
                     packaged = {"itr": i, "url": buffer[i], "type": "transform"}
@@ -191,17 +199,6 @@ def publish(logger, aws_creds, output_stream, work_completed_queue, input_second
             if increase_threads_signal:
                 thread_locker.update_max()
             cutoff = cutoff + videos_per_publish
-            t = time.time()
-        elif not work_completed_queue.empty():
-            data = work_completed_queue.get()
-            key = list(data.keys())[0]
-            if int(key) >= cutoff:
-                buffer[key] = data[key]
-                logger.info("output - transformed -  {} - {}".format(transformed_indicies, cutoff))
-            else:
-                logger.info("output - {} is not greater than current cursor, ignoring...".format(key))
-        else:
-            logger.info("output - {}s has elapsed but not enough points to process.. restarting".format(str(delta)))
             t = time.time()
 
 

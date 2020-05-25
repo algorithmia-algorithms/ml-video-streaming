@@ -19,10 +19,10 @@ def push_to_stream(local_path, svg_path, type, input_fps):
         v0 = input['v'].overlay(overlay, x=10, y=10)
         a0 = input['a']
         output = ffmpeg.output(v0, a0, "rtmp://localhost/hls/streaming", vcodec="h264", acodec="copy", r=input_fps,
-                               max_muxing_queue_size=1024, f="flv")
+                               max_muxing_queue_size=1024, f="flv", loglevel="error")
     else:
         output = ffmpeg.output(input, "rtmp://localhost/hls/streaming", vcodec="h264", acodec="copy", r=input_fps,
-                               max_muxing_queue_size=1024, f="flv")
+                               max_muxing_queue_size=1024, f="flv", loglevel="error")
 
     output.run()
     print(" streamer - pushed stream", flush=True)

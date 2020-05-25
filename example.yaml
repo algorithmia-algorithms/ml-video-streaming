@@ -18,6 +18,7 @@ aws:
 ffmpeg:
   fps: 10
   chunk_duration: 00:00:10
-threading:
+video:
   initial_threadpool: 30
   stream_url: https://www.youtube.com/watch?v=30qZjexZ8bQ
+  host: localhost
