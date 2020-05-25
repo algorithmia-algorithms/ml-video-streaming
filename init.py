@@ -39,13 +39,13 @@ def run_container(client, image, algorithmia_api_key, algorithmia_api_address, m
     if networking and local_aws:
         raw_args['ports'] = {80: 80}
         container_args = _create_container_args(raw_args)
-        container_args['host_config'] = client.api.create_host_config(port_bindings={80: ("127.0.0.1", 80)},
+        container_args['host_config'] = client.api.create_host_config(port_bindings={80: ("0.0.0.0", 80)},
                                                                       binds={aws_dir: {'bind': "/root/.aws", "mode": "ro"}})
         container_args['volumes'] = ["/root/.aws"]
     elif networking:
         raw_args['ports'] = {80: 80}
         container_args = _create_container_args(raw_args)
-        container_args['host_config'] = client.api.create_host_config(port_bindings={80: ("127.0.0.1", 80)})
+        container_args['host_config'] = client.api.create_host_config(port_bindings={80: ("0.0.0.0", 80)})
     elif local_aws:
         container_args = _create_container_args(raw_args)
         container_args['host_config'] = client.api.create_host_config(binds={aws_dir: {'bind': "/root/.aws", "mode": "ro"}})
