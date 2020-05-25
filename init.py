@@ -110,7 +110,7 @@ if __name__ == "__main__":
             data = yaml.safe_load(f)
         if 'aws' in data and 'credentials' in data['aws']:
             creds = data['aws']['credentials']
-            if 'IAM' in creds and 'local_iam' in creds['IAM']:
+            if 'IAM' in creds and isinstance(['IAM'], dict) and  'local_iam' in creds['IAM']:
                 copy_aws_dir()
                 local_credentials = True
             else:
