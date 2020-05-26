@@ -7,7 +7,7 @@ from src.utils import create_producer, create_consumer, credential_auth
 from uuid import uuid4
 import json
 
-MAX_SECONDS = 60
+MAX_SECONDS = 120
 
 
 class CheckableVariable(object):
@@ -142,7 +142,7 @@ def publish(logger, aws_creds, output_stream, work_completed_queue, input_second
     session = credential_auth(aws_creds)
     producer = create_producer(output_stream, session)
     cutoff = None
-    videos_per_publish = int(MAX_SECONDS / fps)
+    videos_per_publish = int(MAX_SECONDS / fps) - 2
     buffer = {}
     originals_buffer = {}
     t = time.time()
