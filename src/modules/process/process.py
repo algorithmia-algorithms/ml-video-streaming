@@ -172,8 +172,8 @@ def publish(logger, aws_creds, output_stream, work_completed_queue, input_second
                 logger.info("output - transformed -  {} - {}".format(transformed_indicies, cutoff))
             else:
                 logger.info("output - {} is not greater than current cursor, ignoring...".format(key))
-        if time.time() - t > MAX_SECONDS and len(buffer.keys()) >= videos_per_publish:
-            logger.info("output - {} - {}".format(transformed_indicies, videos_per_publish))
+        if time.time() - t > MAX_SECONDS and len(buffer.keys()) >= int(videos_per_publish/10):
+            # logger.info("output - {} - {}".format(transformed_indicies, videos_per_publish))
             transformed_indicies.sort()
             shippable_buffer = []
             increase_threads_signal = False
