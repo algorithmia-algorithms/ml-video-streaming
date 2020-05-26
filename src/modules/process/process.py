@@ -153,12 +153,12 @@ def publish(logger, aws_creds, output_stream, work_completed_queue, input_second
     session = credential_auth(aws_creds)
     producer = create_producer(output_stream, session)
     cutoff = None
-    videos_per_publish = int(MAX_SECONDS / fps) - 2
+    videos_per_publish = int(MAX_SECONDS / fps)
     buffer = {}
     originals_buffer = {}
     t = time.time()
-    logger.info("output - waiting {}s before starting publishing".format(str(MAX_SECONDS)))
-    while time.time() - t < MAX_SECONDS:
+    logger.info("output - waiting {}s before starting publishing".format(str(MAX_SECONDS*2)))
+    while time.time() - t < MAX_SECONDS*2:
         time.sleep(0.25)
     t = time.time()
     logger.info("output - starting publishing system...")
