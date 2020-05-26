@@ -123,7 +123,6 @@ def process(logger, client, feeder_q, processed_q, thread_locker, remote_format,
                 data = {itr: algorithm_response}
                 logger.info("process - pushing {} to publishing queue..".format(itr))
                 processed_q.put(data)
-                thread_locker.release()
             else:
                 logger.info("process - skipping {} due to exception...".format(itr))
 
@@ -200,6 +199,10 @@ def publish(logger, aws_creds, output_stream, work_completed_queue, input_second
                 thread_locker.update_max()
             cutoff = cutoff + videos_per_publish
             t = time.time()
+            try:
+                thread_locker.release()
+            except Exception:
+                pass
 
 
 class Logger:
