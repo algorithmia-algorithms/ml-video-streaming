@@ -137,6 +137,18 @@ def consume(logger, aws_creds, work1_q, work2_q, input_stream):
         logger.info("input - got message and queued")
 
 
+def unlocker(thread_locker):
+    while True:
+        t = time.time()
+        while time.time() - t < 30:
+            time.sleep(0.25)
+        try:
+            thread_locker.release()
+        except:
+            pass
+
+
+
 def publish(logger, aws_creds, output_stream, work_completed_queue, input_secondary_queue, thread_locker, fps):
     session = credential_auth(aws_creds)
     producer = create_producer(output_stream, session)
@@ -199,10 +211,6 @@ def publish(logger, aws_creds, output_stream, work_completed_queue, input_second
                 thread_locker.update_max()
             cutoff = cutoff + videos_per_publish
             t = time.time()
-            try:
-                thread_locker.release()
-            except Exception:
-                pass
 
 
 class Logger:
@@ -230,11 +238,11 @@ def processor(algorithmia_api_key, aws_creds, initial_pool, input_stream_name, o
     processed_q = Queue(500)
     thread_locker = PoolManger(0, initial_pool, 2)
     consume_t = [Thread(target=consume, args=(logger, aws_creds, input1_q, input2_q, input_stream_name))]
-    publish_t = [
-        Thread(target=publish, args=(logger, aws_creds, output_stream_name, processed_q, input2_q, thread_locker, fps))]
+    publish_t = [Thread(target=publish, args=(logger, aws_creds, output_stream_name, processed_q, input2_q, thread_locker, fps))]
+    unlocker_t = [Thread(target=unlocker, args=(thread_locker,))]
     threads = [Thread(target=process, args=(logger, client, input1_q, processed_q, thread_locker, data_collection, fps)) for
                _ in range(100)]
-    threads += consume_t + publish_t
+    threads += consume_t + publish_t + unlocker_t
     [thread.start() for thread in threads]
     while True:
         logger.read_next()
