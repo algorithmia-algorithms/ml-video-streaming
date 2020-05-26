@@ -175,7 +175,15 @@ def publish(logger, aws_creds, output_stream, work_completed_queue, input_second
                 cutoff = int(itr)
             original_url = data['url']
             originals_buffer[itr] = original_url
-        else:
+        if not work_completed_queue.empty():
+            data = work_completed_queue.get()
+            key = list(data.keys())[0]
+            if int(key) >= cutoff:
+                buffer[key] = data[key]
+                logger.info("output - transformed -  {} - {}".format(transformed_indicies, cutoff))
+            else:
+                logger.info("output - {} is not greater than current cursor, ignoring...".format(key))
+        if time.time() - t >= MAX_SECONDS:
             logger.info("output - {} - {}".format(transformed_indicies, videos_per_publish))
             transformed_indicies.sort()
             shippable_buffer = []
@@ -203,14 +211,6 @@ def publish(logger, aws_creds, output_stream, work_completed_queue, input_second
                 thread_locker.update_max()
             cutoff = cutoff + videos_per_publish
             t = time.time()
-        if not work_completed_queue.empty():
-            data = work_completed_queue.get()
-            key = list(data.keys())[0]
-            if int(key) >= cutoff:
-                buffer[key] = data[key]
-                logger.info("output - transformed -  {} - {}".format(transformed_indicies, cutoff))
-            else:
-                logger.info("output - {} is not greater than current cursor, ignoring...".format(key))
 
 
 class Logger:
