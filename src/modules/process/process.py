@@ -7,7 +7,7 @@ from src.utils import create_producer, create_consumer, credential_auth
 from uuid import uuid4
 import json
 
-MAX_SECONDS = 60
+MAX_SECONDS = 120
 
 
 class CheckableVariable(object):
@@ -164,7 +164,7 @@ def publish(logger, aws_creds, output_stream, work_completed_queue, input_second
                 cutoff = int(itr)
             original_url = data['url']
             originals_buffer[itr] = original_url
-        elif not work_completed_queue.empty():
+        if not work_completed_queue.empty():
             data = work_completed_queue.get()
             key = list(data.keys())[0]
             if int(key) >= cutoff:
@@ -172,7 +172,7 @@ def publish(logger, aws_creds, output_stream, work_completed_queue, input_second
                 logger.info("output - transformed -  {} - {}".format(transformed_indicies, cutoff))
             else:
                 logger.info("output - {} is not greater than current cursor, ignoring...".format(key))
-        else:
+        if time.time() - t > MAX_SECONDS and len(buffer.keys()) >= videos_per_publish:
             logger.info("output - {} - {}".format(transformed_indicies, videos_per_publish))
             transformed_indicies.sort()
             shippable_buffer = []
