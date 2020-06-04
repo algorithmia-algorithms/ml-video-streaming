@@ -1,11 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
-<meta charset="utf-8"/>
+<head>
+    <meta charset="utf-8"/>
+    <title>Algorithmia Video Streaming</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js"></script>
+    <style>
+        * {
+            font-family: "Nunito Sans", Helvetica, sans-serif;
+        }
+        body {
+            background: url('https://cdn.algorithmia.com/static/images/footer-wave.cde2321.svg') no-repeat fixed bottom;
+            background-size: 100% 80px;
+        }
+        h1 {
+            color: #6b547b;
+            font-size: 22pt;
+            font-weight: normal;
+            margin-top: 0;
+        }
+        .video-player {
+            margin-top: 6%;
+            margin-left: auto;
+            margin-right: auto;
+            width: 500px;
+        }
+    </style>
+</head>
 <body>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js"></script>
-<!-- Or if you want a more recent canary version -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/hls.js@canary"></script> -->
-<video id="video" width="500" height="500" controls></video>
+​
+<img src="https://algorithmia.com/public/logos/algorithmia_logo.svg" title="Algorithmia">
+<h1>Video streaming</h1>
+​
+<div class="video-player">
+    <video id="video" width="500" height="400" controls></video>
+</div>
+​
 <script>
     var video = document.getElementById('video');
     var videoSrc = "http://{{host}}/hls/streaming.m3u8";
